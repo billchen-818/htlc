@@ -150,21 +150,21 @@ func (h *HTLCChaincode) createHTLCByCode(stub shim.ChaincodeStubInterface, args 
 
 	hashValue := sha256.New().Sum([]byte(souce))
 
-	creatime := time.Now().Unix()
+	creatime := time.Now()
 	ttl, err := strconv.Atoi(ttlStr)
 	if err != nil {
 		fmt.Printf("create htlc tx ttl string to int error: %v\n", err)
 		return shim.Error(err.Error())
 	}
 
-	expiration := time.Unix(creatime, 0).Add(time.Duration(ttl)).Unix()
+	expiration := creatime.Add(time.Duration(ttl)).Unix()
 
 	htlc := HTLC{
 		Sender: sender,
 		ToAddr: to,
 		Token: token,
 		Secret: hashValue,
-		CreateTime: creatime,
+		CreateTime: creatime.Unix(),
 		ExpirationTime: expiration,
 		SouceCode: "",
 		State: HTLC_CREATE,
@@ -180,11 +180,15 @@ func (h *HTLCChaincode) createHTLCByCode(stub shim.ChaincodeStubInterface, args 
 
 	htlcs.HTLCS = make(map[string]HTLC)
 
-	err = json.Unmarshal(htlcsByte, &htlcs)
-	fmt.Println("h: ", string(htlcsByte))
-	if err != nil {
-		fmt.Printf("create htlc tx json error: %v\n", err)
-		return shim.Error(err.Error())
+	fmt.Println(htlcsByte==nil)
+
+	if htlcsByte != nil {
+		err = json.Unmarshal(htlcsByte, &htlcs)
+		fmt.Println("h: ", string(htlcsByte))
+		if err != nil {
+			fmt.Printf("create htlc tx json error: %v\n", err)
+			return shim.Error(err.Error())
+		}
 	}
 
 	id := getRandomString(20)
@@ -272,9 +276,9 @@ func (h *HTLCChaincode) createHTLCByHash(stub shim.ChaincodeStubInterface, args 
 		SouceCode: "",
 	}
 
-	creatime := time.Now().Unix()
-	expiration := time.Unix(creatime, 0).Add(time.Duration(ttl)).Unix()
-	htlc.CreateTime = creatime
+	creatime := time.Now()
+	expiration := creatime.Add(time.Duration(ttl)).Unix()
+	htlc.CreateTime = creatime.Unix()
 	htlc.ExpirationTime = expiration
 	htlc.State = HTLC_CREATE
 
