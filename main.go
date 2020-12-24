@@ -87,6 +87,7 @@ func (h *HTLCChaincode) createAccount(stub shim.ChaincodeStubInterface, args []s
 	address := args[0]
 	token, err := strconv.Atoi(args[1])
 	if err != nil {
+		fmt.Printf("create account string to int error: %v\n", err)
 		shim.Error(err.Error())
 	}
 	acc := Account{
@@ -96,10 +97,12 @@ func (h *HTLCChaincode) createAccount(stub shim.ChaincodeStubInterface, args []s
 	}
 	accByte, err := json.Marshal(acc)
 	if err != nil {
+		fmt.Printf("create account json marshal error: %v\n", err)
 		return shim.Error(err.Error())
 	}
 
 	if err = stub.PutState(address, accByte);err != nil {
+		fmt.Printf("create account putstate error: %v\n", err)
 		return shim.Error(err.Error())
 	}
 	return shim.Success(nil)
@@ -108,11 +111,15 @@ func (h *HTLCChaincode) createAccount(stub shim.ChaincodeStubInterface, args []s
 func (h *HTLCChaincode) queryAccount(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	accByte, err := stub.GetState(args[0])
 	if err != nil {
+		fmt.Printf("query account getstate error: %v\n", err)
 		return shim.Error(err.Error())
 	}
 
+	fmt.Println("account: ", string(accByte))
+
 	var acc Account
 	if err = json.Unmarshal(accByte, &acc); err != nil {
+		fmt.Printf("query account json unmarshal error:%v\n", err)
 		return shim.Error(err.Error())
 	}
 	fmt.Printf("Query Account:\nAddress:%v\nToken:%v\nLockToken:%v\n",acc.Address, acc.Token, acc.LockToken)
@@ -134,6 +141,7 @@ func (h *HTLCChaincode) createHTLCByCode(stub shim.ChaincodeStubInterface, args 
 
 	token, err := strconv.Atoi(tokenStr)
 	if err != nil {
+		fmt.Printf("create htlc tx token string to int error: %v\n", err)
 		return shim.Error(err.Error())
 	}
 
@@ -142,6 +150,7 @@ func (h *HTLCChaincode) createHTLCByCode(stub shim.ChaincodeStubInterface, args 
 	creatime := time.Now().Unix()
 	ttl, err := strconv.Atoi(ttlStr)
 	if err != nil {
+		fmt.Printf("create htlc tx ttl string to int error: %v\n", err)
 		return shim.Error(err.Error())
 	}
 
@@ -160,12 +169,14 @@ func (h *HTLCChaincode) createHTLCByCode(stub shim.ChaincodeStubInterface, args 
 
 	htlcsByte, err := stub.GetState(KEY_HTLCS)
 	if err != nil {
+		fmt.Printf("create htlc tx get state 1 error: %v\n", err)
 		return shim.Error(err.Error())
 	}
 
 	var htlcs HTLCChaincode
 	err = json.Unmarshal(htlcsByte, &htlcs)
 	if err != nil {
+		fmt.Printf("create htlc tx json error: %v\n", err)
 		return shim.Error(err.Error())
 	}
 
