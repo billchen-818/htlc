@@ -177,7 +177,11 @@ func (h *HTLCChaincode) createHTLCByCode(stub shim.ChaincodeStubInterface, args 
 	}
 
 	var htlcs HTLCChaincode
+
+	htlcs.HTLCS = make(map[string]HTLC)
+
 	err = json.Unmarshal(htlcsByte, &htlcs)
+	fmt.Println("h: ", string(htlcsByte))
 	if err != nil {
 		fmt.Printf("create htlc tx json error: %v\n", err)
 		return shim.Error(err.Error())
