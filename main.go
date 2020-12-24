@@ -100,6 +100,8 @@ func (h *HTLCChaincode) createAccount(stub shim.ChaincodeStubInterface, args []s
 		fmt.Printf("create account json marshal error: %v\n", err)
 		return shim.Error(err.Error())
 	}
+	fmt.Println("address: ", address)
+	fmt.Println("account: ", string(accByte))
 
 	if err = stub.PutState(address, accByte);err != nil {
 		fmt.Printf("create account putstate error: %v\n", err)
@@ -109,6 +111,7 @@ func (h *HTLCChaincode) createAccount(stub shim.ChaincodeStubInterface, args []s
 }
 
 func (h *HTLCChaincode) queryAccount(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	fmt.Println("address: ", args[0])
 	accByte, err := stub.GetState(args[0])
 	if err != nil {
 		fmt.Printf("query account getstate error: %v\n", err)
