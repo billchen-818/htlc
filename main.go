@@ -288,9 +288,13 @@ func (h *HTLCChaincode) createHTLCByHash(stub shim.ChaincodeStubInterface, args 
 	}
 
 	var htlcs HTLCChaincode
-	err = json.Unmarshal(htlcsByte, &htlcs)
-	if err != nil {
-		return shim.Error(err.Error())
+	htlcs.HTLCS = make(map[string]HTLC)
+	if htlcsByte != nil {
+		err = json.Unmarshal(htlcsByte, &htlcs)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+
 	}
 
 	id := getRandomString(20)
