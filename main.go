@@ -151,13 +151,13 @@ func (h *HTLCChaincode) createHTLCByCode(stub shim.ChaincodeStubInterface, args 
 	hashValue := sha256.New().Sum([]byte(souce))
 
 	creatime := time.Now()
-	ttl, err := strconv.Atoi(ttlStr)
+	ttl, err := time.ParseDuration(ttlStr)
 	if err != nil {
 		fmt.Printf("create htlc tx ttl string to int error: %v\n", err)
 		return shim.Error(err.Error())
 	}
 
-	expiration := creatime.Add(time.Duration(ttl)).Unix()
+	expiration := creatime.Add(ttl).Unix()
 
 	htlc := HTLC{
 		Sender: sender,
@@ -263,7 +263,7 @@ func (h *HTLCChaincode) createHTLCByHash(stub shim.ChaincodeStubInterface, args 
 		return shim.Error(err.Error())
 	}
 
-	ttl, err := strconv.Atoi(ttlStr)
+	ttl, err := time.ParseDuration(ttlStr)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -277,7 +277,7 @@ func (h *HTLCChaincode) createHTLCByHash(stub shim.ChaincodeStubInterface, args 
 	}
 
 	creatime := time.Now()
-	expiration := creatime.Add(time.Duration(ttl)).Unix()
+	expiration := creatime.Add(ttl).Unix()
 	htlc.CreateTime = creatime.Unix()
 	htlc.ExpirationTime = expiration
 	htlc.State = HTLC_CREATE
