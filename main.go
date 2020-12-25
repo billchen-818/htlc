@@ -343,7 +343,7 @@ func (h *HTLCChaincode) createHTLCByHash(stub shim.ChaincodeStubInterface, args 
 
 func (h *HTLCChaincode) invokeHTLC(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	id := args[0]
-	souce := args[2]
+	souce := args[1]
 
 	htlcsByte, err := stub.GetState(KEY_HTLCS)
 	if err != nil {
