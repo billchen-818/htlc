@@ -3,9 +3,9 @@ package main
 type HTLCState int
 
 const (
-	HashLOCK   HTLCState = 0
+	HashLOCK HTLCState = 0
 	Received HTLCState = 1
-	Refund  HTLCState = 2
+	Refund   HTLCState = 2
 )
 
 type HTLC struct {
@@ -20,7 +20,8 @@ type HTLC struct {
 }
 
 type Account struct {
-	Address string `json:"address"`
-	Amount uint64 `json:"tokens"`
-	Passwd string `json:"passwd"`
+	Address  string `json:"address"`
+	Amount   uint64 `json:"tokens"`
+	Passwd   string `json:"passwd"`
+	Sequence uint64 `json:"sequence"`
 }

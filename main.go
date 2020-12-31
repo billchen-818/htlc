@@ -63,7 +63,7 @@ func (h *HTLCChaincode) create(stub shim.ChaincodeStubInterface, args []string) 
 	preImage := args[4]
 	passwd := args[5]
 
-	// 1、检查sender账户，并判断资产是否足够
+	// 1?琩sender?????琌ì?
 	trans := [][]byte{[]byte("query"), []byte(sender)}
 	resPonse := stub.InvokeChaincode(AccountChainCodeName, trans, AccountChainCodeChannel)
 	if resPonse.Status != shim.OK {
@@ -84,8 +84,9 @@ func (h *HTLCChaincode) create(stub shim.ChaincodeStubInterface, args []string) 
 		return shim.Error("account assert is not enough")
 	}
 
-	// 2、创建锁定账户
-	addressByte := sha256.Sum256([]byte("")) // TODO 锁定账户地址生成
+	// 2??﹚??
+	str := senderAccount.Address+uint64ToString(senderAccount.Sequence)
+	addressByte := sha256.Sum256([]byte(str))
 	address := hex.EncodeToString(addressByte[:])
 
 	trans = [][]byte{[]byte("create"), []byte(address), []byte(preImage), []byte("")}
@@ -94,14 +95,14 @@ func (h *HTLCChaincode) create(stub shim.ChaincodeStubInterface, args []string) 
 		return shim.Success([]byte(resPonse.Message))
 	}
 
-	// 3、发送者账户向锁定账户转移资产
+	// 3?癳???﹚???簿??
 	trans = [][]byte{[]byte("transfer"), []byte(sender), []byte(address), []byte(amountStr), []byte(passwd)}
 	resPonse = stub.InvokeChaincode(AccountChainCodeName, trans, AccountChainCodeChannel)
 	if resPonse.Status != shim.OK {
 		return shim.Success([]byte(resPonse.Message))
 	}
 
-	// 4、创建htlc并返回hashvalue
+	// 4?htlchashvalue
 	hashValueBytes := sha256.Sum256([]byte(preImage))
 	hashValue := hex.EncodeToString(hashValueBytes[:])
 
@@ -146,7 +147,7 @@ func (h *HTLCChaincode) createHash(stub shim.ChaincodeStubInterface, args []stri
 	hashValue := args[4]
 	passwd := args[5]
 
-	// 1、检查sender账户，并判断资产是否足够
+	// 1?琩sender?????琌ì?
 	trans := [][]byte{[]byte("query"), []byte(sender)}
 	resPonse := stub.InvokeChaincode(AccountChainCodeName, trans, AccountChainCodeChannel)
 	if resPonse.Status != shim.OK {
@@ -167,8 +168,9 @@ func (h *HTLCChaincode) createHash(stub shim.ChaincodeStubInterface, args []stri
 		return shim.Error("account assert is not enough")
 	}
 
-	// 2、发送者账户创建锁定账户
-	addressByte := sha256.Sum256([]byte("")) // TODO 锁定账户地址生成
+	// 2?癳????﹚??
+	str := senderAccount.Address+uint64ToString(senderAccount.Sequence)
+	addressByte := sha256.Sum256([]byte(str))
 	address := hex.EncodeToString(addressByte[:])
 
 	trans = [][]byte{[]byte("create"), []byte(address), []byte(hashValue), []byte("hash")}
@@ -177,14 +179,14 @@ func (h *HTLCChaincode) createHash(stub shim.ChaincodeStubInterface, args []stri
 		return shim.Success([]byte(resPonse.Message))
 	}
 
-	// 3、发送者账户向锁定账户转移资产
+	// 3?癳???﹚???簿??
 	trans = [][]byte{[]byte("transfer"), []byte(sender), []byte(address), []byte(amountStr), []byte(passwd)}
 	resPonse = stub.InvokeChaincode(AccountChainCodeName, trans, AccountChainCodeChannel)
 	if resPonse.Status != shim.OK {
 		return shim.Success([]byte(resPonse.Message))
 	}
 
-	// 4、创建htlc
+	// 4?htlc
 	timeLock, err := strconv.ParseInt(timeLockStr, 10, 64)
 	if err != nil {
 		return shim.Error(err.Error())
@@ -223,7 +225,7 @@ func (h *HTLCChaincode) receive(stub shim.ChaincodeStubInterface, args []string)
 	id := args[0]
 	preImage := args[1]
 
-	// 1、检查htlc
+	// 1?琩htlc
 	key := fmt.Sprintf(HTLCPrefix, id)
 	htlcByte, err := stub.GetState(key)
 	if err != nil {
@@ -247,14 +249,14 @@ func (h *HTLCChaincode) receive(stub shim.ChaincodeStubInterface, args []string)
 		return shim.Error("time is expirate")
 	}
 
-	// 2、从锁定账户转账到接收者账户
+	// 2??﹚????钡Μ??
 	trans := [][]byte{[]byte("transfer"), []byte(htlc.LockAddress), []byte(htlc.Receiver), []byte(uint64ToString(htlc.Amount)), []byte(preImage)}
 	resPonse := stub.InvokeChaincode(AccountChainCodeName, trans, AccountChainCodeChannel)
 	if resPonse.Status != shim.OK {
 		return shim.Success([]byte(resPonse.Message))
 	}
 
-	// 3、更新htlc,preImage添加上
+	// 3穝htlc,preImage睰
 	htlc.PreImage = preImage
 	htlc.State = Received
 	htlcByte, err = json.Marshal(htlc)
@@ -275,7 +277,7 @@ func (h *HTLCChaincode) refund(stub shim.ChaincodeStubInterface, args []string) 
 	id := args[0]
 	preImage := args[1]
 
-	// 1、检查htlc
+	// 1?琩htlc
 	key := fmt.Sprintf(HTLCPrefix, id)
 	htlcByte, err := stub.GetState(key)
 	if err != nil {
@@ -295,14 +297,14 @@ func (h *HTLCChaincode) refund(stub shim.ChaincodeStubInterface, args []string) 
 		return shim.Error("time is not expirate")
 	}
 
-	// 2、从锁定账户转账到发送者账户
+	// 2??﹚?????癳??
 	trans := [][]byte{[]byte("transfer"), []byte(htlc.LockAddress), []byte(htlc.Sender), []byte(uint64ToString(htlc.Amount)), []byte(preImage)}
 	resPonse := stub.InvokeChaincode(AccountChainCodeName, trans, AccountChainCodeChannel)
 	if resPonse.Status != shim.OK {
 		return shim.Success([]byte(resPonse.Message))
 	}
 
-	// 3、更新htlc
+	// 3穝htlc
 	htlc.State = Refund
 	if htlcByte, err = json.Marshal(htlc); err != nil {
 		return shim.Error(err.Error())
