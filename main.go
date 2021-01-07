@@ -63,11 +63,11 @@ func (h *HTLCChaincode) create(stub shim.ChaincodeStubInterface, args []string) 
 	preImage := args[4]
 	passwd := args[5]
 
-	// 1�B?�dsender??�A�}�P???�O�_��?
+	// 1、query sender account
 	trans := [][]byte{[]byte("query"), []byte(sender)}
 	resPonse := stub.InvokeChaincode(AccountChainCodeName, trans, AccountChainCodeChannel)
 	if resPonse.Status != shim.OK {
-		return shim.Success([]byte(resPonse.Message))
+		return shim.Error("craete htlc query sender account error: " + resPonse.Message)
 	}
 
 	senderAccount := &Account{}
@@ -84,25 +84,30 @@ func (h *HTLCChaincode) create(stub shim.ChaincodeStubInterface, args []string) 
 		return shim.Error("account assert is not enough")
 	}
 
-	// 2�B?��?�w??
-	str := senderAccount.Address+uint64ToString(senderAccount.Sequence)
-	addressByte := sha256.Sum256([]byte(str))
-	address := hex.EncodeToString(addressByte[:])
+	// 2、create mid account
+	midAddress := senderAccount.Address+uint64ToString(senderAccount.Sequence)
 
-	trans = [][]byte{[]byte("register"), []byte(address), []byte(preImage), []byte("")}
+	trans = [][]byte{[]byte("register"), []byte(midAddress), []byte(preImage), []byte("")}
 	resPonse = stub.InvokeChaincode(AccountChainCodeName, trans, AccountChainCodeChannel)
 	if resPonse.Status != shim.OK {
-		return shim.Success([]byte(resPonse.Message))
+		return shim.Error("craete htlc register mid account error: "+ resPonse.Message)
 	}
 
-	// 3�B?�e��??�V?�w???��??
-	trans = [][]byte{[]byte("transfer"), []byte(sender), []byte(address), []byte(amountStr), []byte(passwd)}
+	// 3、update sender account sequence
+	trans = [][]byte{[]byte("sequence_add"), []byte(sender)}
 	resPonse = stub.InvokeChaincode(AccountChainCodeName, trans, AccountChainCodeChannel)
 	if resPonse.Status != shim.OK {
-		return shim.Success([]byte(resPonse.Message))
+		return shim.Error("craete htlc update sender account sequence error: "+ resPonse.Message)
 	}
 
-	// 4�B?��htlc�}��^hashvalue
+	// 4、 transfer to mid account
+	trans = [][]byte{[]byte("transfer"), []byte(sender), []byte(midAddress), []byte(amountStr), []byte(passwd)}
+	resPonse = stub.InvokeChaincode(AccountChainCodeName, trans, AccountChainCodeChannel)
+	if resPonse.Status != shim.OK {
+		return shim.Error("craete htlc transfer mid  account error:" + resPonse.Message)
+	}
+
+	// 5、 htlc
 	hashValueBytes := sha256.Sum256([]byte(preImage))
 	hashValue := hex.EncodeToString(hashValueBytes[:])
 
@@ -119,7 +124,7 @@ func (h *HTLCChaincode) create(stub shim.ChaincodeStubInterface, args []string) 
 		HashValue: hashValue,
 		TimeLock: timeLock,
 		PreImage: "",
-		LockAddress: address,
+		LockAddress: midAddress,
 		State : HashLOCK,
 	}
 
@@ -147,7 +152,7 @@ func (h *HTLCChaincode) createHash(stub shim.ChaincodeStubInterface, args []stri
 	hashValue := args[4]
 	passwd := args[5]
 
-	// 1�B?�dsender??�A�}�P???�O�_��?
+	// 1、 query sender account
 	trans := [][]byte{[]byte("query"), []byte(sender)}
 	resPonse := stub.InvokeChaincode(AccountChainCodeName, trans, AccountChainCodeChannel)
 	if resPonse.Status != shim.OK {
@@ -168,25 +173,30 @@ func (h *HTLCChaincode) createHash(stub shim.ChaincodeStubInterface, args []stri
 		return shim.Error("account assert is not enough")
 	}
 
-	// 2�B?�e��???��?�w??
-	str := senderAccount.Address+uint64ToString(senderAccount.Sequence)
-	addressByte := sha256.Sum256([]byte(str))
-	address := hex.EncodeToString(addressByte[:])
+	// 2、create mid account
+	midAddress := senderAccount.Address+uint64ToString(senderAccount.Sequence)
 
-	trans = [][]byte{[]byte("register"), []byte(address), []byte(hashValue), []byte("hash")}
+	trans = [][]byte{[]byte("register"), []byte(midAddress), []byte(hashValue), []byte("hash")}
 	resPonse = stub.InvokeChaincode(AccountChainCodeName, trans, AccountChainCodeChannel)
 	if resPonse.Status != shim.OK {
-		return shim.Success([]byte(resPonse.Message))
+		return shim.Error("craete htlc register mid account error: "+ resPonse.Message)
 	}
 
-	// 3�B?�e��??�V?�w???��??
-	trans = [][]byte{[]byte("transfer"), []byte(sender), []byte(address), []byte(amountStr), []byte(passwd)}
+	// 3、update sender account sequence
+	trans = [][]byte{[]byte("sequence_add"), []byte(sender)}
 	resPonse = stub.InvokeChaincode(AccountChainCodeName, trans, AccountChainCodeChannel)
 	if resPonse.Status != shim.OK {
-		return shim.Success([]byte(resPonse.Message))
+		return shim.Error("craete htlc update sender account sequence error: "+ resPonse.Message)
 	}
 
-	// 4�B?��htlc
+	// 4、transfer to mid account
+	trans = [][]byte{[]byte("transfer"), []byte(sender), []byte(midAddress), []byte(amountStr), []byte(passwd)}
+	resPonse = stub.InvokeChaincode(AccountChainCodeName, trans, AccountChainCodeChannel)
+	if resPonse.Status != shim.OK {
+		return shim.Error("craete htlc transfer mid  account error:" + resPonse.Message)
+	}
+
+	// 5、htlc
 	timeLock, err := strconv.ParseInt(timeLockStr, 10, 64)
 	if err != nil {
 		return shim.Error(err.Error())
@@ -201,7 +211,7 @@ func (h *HTLCChaincode) createHash(stub shim.ChaincodeStubInterface, args []stri
 		HashValue: hashValue,
 		TimeLock: timeLock,
 		PreImage: "",
-		LockAddress: address,
+		LockAddress: midAddress,
 		State : HashLOCK,
 	}
 
@@ -225,7 +235,7 @@ func (h *HTLCChaincode) receive(stub shim.ChaincodeStubInterface, args []string)
 	id := args[0]
 	preImage := args[1]
 
-	// 1�B?�dhtlc
+	// 1、get htlc
 	key := fmt.Sprintf(HTLCPrefix, id)
 	htlcByte, err := stub.GetState(key)
 	if err != nil {
@@ -249,14 +259,14 @@ func (h *HTLCChaincode) receive(stub shim.ChaincodeStubInterface, args []string)
 		return shim.Error("time is expirate")
 	}
 
-	// 2�B??�w????�챵����??
+	// 2、transfer mid account to receiver
 	trans := [][]byte{[]byte("transfer"), []byte(htlc.LockAddress), []byte(htlc.Receiver), []byte(uint64ToString(htlc.Amount)), []byte(preImage)}
 	resPonse := stub.InvokeChaincode(AccountChainCodeName, trans, AccountChainCodeChannel)
 	if resPonse.Status != shim.OK {
 		return shim.Success([]byte(resPonse.Message))
 	}
 
-	// 3�B��shtlc,preImage�K�[�W
+	// 3、update htlc
 	htlc.PreImage = preImage
 	htlc.State = Received
 	htlcByte, err = json.Marshal(htlc)
@@ -277,7 +287,7 @@ func (h *HTLCChaincode) refund(stub shim.ChaincodeStubInterface, args []string) 
 	id := args[0]
 	preImage := args[1]
 
-	// 1�B?�dhtlc
+	// 1、query htlc
 	key := fmt.Sprintf(HTLCPrefix, id)
 	htlcByte, err := stub.GetState(key)
 	if err != nil {
@@ -297,14 +307,14 @@ func (h *HTLCChaincode) refund(stub shim.ChaincodeStubInterface, args []string) 
 		return shim.Error("time is not expirate")
 	}
 
-	// 2�B??�w????��?�e��??
+	// 2、 transfer mid account to sender
 	trans := [][]byte{[]byte("transfer"), []byte(htlc.LockAddress), []byte(htlc.Sender), []byte(uint64ToString(htlc.Amount)), []byte(preImage)}
 	resPonse := stub.InvokeChaincode(AccountChainCodeName, trans, AccountChainCodeChannel)
 	if resPonse.Status != shim.OK {
 		return shim.Success([]byte(resPonse.Message))
 	}
 
-	// 3�B��shtlc
+	// 3、update htlc
 	htlc.State = Refund
 	if htlcByte, err = json.Marshal(htlc); err != nil {
 		return shim.Error(err.Error())
