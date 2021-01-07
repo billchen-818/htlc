@@ -89,7 +89,7 @@ func (h *HTLCChaincode) create(stub shim.ChaincodeStubInterface, args []string) 
 	addressByte := sha256.Sum256([]byte(str))
 	address := hex.EncodeToString(addressByte[:])
 
-	trans = [][]byte{[]byte("create"), []byte(address), []byte(preImage), []byte("")}
+	trans = [][]byte{[]byte("register"), []byte(address), []byte(preImage), []byte("")}
 	resPonse = stub.InvokeChaincode(AccountChainCodeName, trans, AccountChainCodeChannel)
 	if resPonse.Status != shim.OK {
 		return shim.Success([]byte(resPonse.Message))
@@ -173,7 +173,7 @@ func (h *HTLCChaincode) createHash(stub shim.ChaincodeStubInterface, args []stri
 	addressByte := sha256.Sum256([]byte(str))
 	address := hex.EncodeToString(addressByte[:])
 
-	trans = [][]byte{[]byte("create"), []byte(address), []byte(hashValue), []byte("hash")}
+	trans = [][]byte{[]byte("register"), []byte(address), []byte(hashValue), []byte("hash")}
 	resPonse = stub.InvokeChaincode(AccountChainCodeName, trans, AccountChainCodeChannel)
 	if resPonse.Status != shim.OK {
 		return shim.Success([]byte(resPonse.Message))
