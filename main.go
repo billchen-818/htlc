@@ -36,13 +36,13 @@ func (h *HTLCChaincode) Invoke(stub shim.ChaincodeStubInterface) (res pb.Respons
 	switch fn {
 	case "create":
 		res = h.create(stub, args)
-	case "create_hash":
+	case "createhash":
 		res = h.createHash(stub, args)
 	case "receive":
 		res = h.receive(stub, args)
 	case "refund":
 		res = h.refund(stub, args)
-	case "query_htlc":
+	case "queryhtlc":
 		res = h.query(stub, args)
 	default:
 		res = shim.Error("Invalid invoke function name")
@@ -94,7 +94,7 @@ func (h *HTLCChaincode) create(stub shim.ChaincodeStubInterface, args []string) 
 	}
 
 	// 3、update sender account sequence
-	trans = [][]byte{[]byte("sequence_add"), []byte(sender)}
+	trans = [][]byte{[]byte("sequenceadd"), []byte(sender)}
 	resPonse = stub.InvokeChaincode(AccountChainCodeName, trans, AccountChainCodeChannel)
 	if resPonse.Status != shim.OK {
 		return shim.Error("craete htlc update sender account sequence error: "+ resPonse.Message)
@@ -183,7 +183,7 @@ func (h *HTLCChaincode) createHash(stub shim.ChaincodeStubInterface, args []stri
 	}
 
 	// 3、update sender account sequence
-	trans = [][]byte{[]byte("sequence_add"), []byte(sender)}
+	trans = [][]byte{[]byte("sequenceadd"), []byte(sender)}
 	resPonse = stub.InvokeChaincode(AccountChainCodeName, trans, AccountChainCodeChannel)
 	if resPonse.Status != shim.OK {
 		return shim.Error("craete htlc update sender account sequence error: "+ resPonse.Message)
